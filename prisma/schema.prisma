@@ -1,0 +1,412 @@
+// Healthcare Management System Database Schema
+// Complete schema with all 11 models for production-ready application
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  LABORATORY
+  PHARMACY
+  PATIENT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PrescriptionStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+}
+
+enum NotificationType {
+  APPOINTMENT
+  PRESCRIPTION
+  LAB_REPORT
+  MEDICINE_READY
+  GENERAL
+}
+
+enum AdmissionStatus {
+  ADMITTED
+  DISCHARGED
+  TRANSFERRED
+}
+
+// ==================== CORE USER MODEL ====================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String // Hashed with bcryptjs
+  role      UserRole
+  name      String
+  phone     String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Role-specific profiles (one-to-one relationships)
+  admin      Admin?
+  doctor     Doctor?
+  laboratory Laboratory?
+  pharmacy   Pharmacy?
+  patient    Patient?
+
+  // Common relationships
+  notifications Notification[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// ==================== ROLE-SPECIFIC PROFILES ====================
+
+model Admin {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Doctor {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialization  String
+  licenseNumber   String  @unique
+  qualification   String
+  experience      Int // in years
+  consultationFee Float
+  bio             String?
+
+  // Relationships
+  appointments          Appointment[]
+  labPrescriptions      LabPrescription[]
+  medicinePrescriptions MedicinePrescription[]
+  patientAdmissions     PatientAdmission[]
+  availableSlots        DoctorAvailability[]
+  preferredLabs         DoctorLabPartnership[]
+  preferredPharmacies   DoctorPharmacyPartnership[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([specialization])
+}
+
+model Laboratory {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  labName         String
+  address         String
+  licenseNumber   String   @unique
+  servicesOffered String[] // Array of test types
+  operatingHours  String?
+
+  // Relationships
+  labPrescriptions   LabPrescription[]
+  labReports         LabReport[]
+  doctorPartnerships DoctorLabPartnership[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Pharmacy {
+  id             String  @id @default(cuid())
+  userId         String  @unique
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pharmacyName   String
+  address        String
+  licenseNumber  String  @unique
+  operatingHours String?
+
+  // Relationships
+  medicinePrescriptions MedicinePrescription[]
+  doctorPartnerships    DoctorPharmacyPartnership[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Patient {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateOfBirth      DateTime
+  gender           String
+  bloodGroup       String?
+  address          String?
+  emergencyContact String?
+  allergies        String[] // Array of allergies
+
+  // Relationships
+  appointments          Appointment[]
+  labPrescriptions      LabPrescription[]
+  medicinePrescriptions MedicinePrescription[]
+  labReports            LabReport[]
+  vitalRecords          VitalRecord[]
+  admissions            PatientAdmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== DOCTOR PARTNERSHIPS ====================
+
+model DoctorLabPartnership {
+  id       String @id @default(cuid())
+  doctorId String
+  labId    String
+
+  doctor     Doctor     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  laboratory Laboratory @relation(fields: [labId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId, labId])
+  @@index([doctorId])
+  @@index([labId])
+}
+
+model DoctorPharmacyPartnership {
+  id         String @id @default(cuid())
+  doctorId   String
+  pharmacyId String
+
+  doctor   Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  pharmacy Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId, pharmacyId])
+  @@index([doctorId])
+  @@index([pharmacyId])
+}
+
+// ==================== DOCTOR AVAILABILITY ====================
+
+model DoctorAvailability {
+  id           String  @id @default(cuid())
+  doctorId     String
+  doctor       Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek    Int // 0=Sunday, 1=Monday, ..., 6=Saturday
+  startTime    String // HH:MM format (e.g., "09:00")
+  endTime      String // HH:MM format (e.g., "17:00")
+  slotDuration Int // in minutes (e.g., 30)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId])
+  @@index([dayOfWeek])
+}
+
+// ==================== APPOINTMENTS ====================
+
+model Appointment {
+  id              String            @id @default(cuid())
+  doctorId        String
+  patientId       String
+  doctor          Doctor            @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  patient         Patient           @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  appointmentDate DateTime
+  startTime       String // HH:MM format
+  endTime         String // HH:MM format
+  status          AppointmentStatus @default(SCHEDULED)
+  reason          String?
+  notes           String?
+
+  // Relationships to prescriptions
+  labPrescriptions      LabPrescription[]
+  medicinePrescriptions MedicinePrescription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId])
+  @@index([patientId])
+  @@index([appointmentDate])
+  @@index([status])
+}
+
+// ==================== LAB PRESCRIPTIONS & REPORTS ====================
+
+model LabPrescription {
+  id                 String             @id @default(cuid())
+  doctorId           String
+  patientId          String
+  labId              String
+  appointmentId      String?
+  doctor             Doctor             @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  patient            Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  lab                Laboratory         @relation(fields: [labId], references: [id], onDelete: Restrict)
+  appointment        Appointment?       @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  testName           String
+  testDetails        String?
+  instructions       String?
+  status             PrescriptionStatus @default(PENDING)
+  urgency            String? // ROUTINE, URGENT, STAT
+  prescriptionPdfUrl String? // PDF file path
+
+  // Relationships
+  report LabReport?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId])
+  @@index([patientId])
+  @@index([labId])
+  @@index([appointmentId])
+  @@index([status])
+}
+
+model LabReport {
+  id                String          @id @default(cuid())
+  labPrescriptionId String          @unique
+  labId             String
+  patientId         String
+  labPrescription   LabPrescription @relation(fields: [labPrescriptionId], references: [id], onDelete: Cascade)
+  lab               Laboratory      @relation(fields: [labId], references: [id], onDelete: Restrict)
+  patient           Patient         @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  reportPdfUrl      String? // PDF file path
+  structuredData    Json? // JSON structure for test results
+  findings          String?
+  recommendations   String?
+
+  completedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([labId])
+  @@index([patientId])
+  @@index([completedAt])
+}
+
+// ==================== MEDICINE PRESCRIPTIONS ====================
+
+model MedicinePrescription {
+  id                 String             @id @default(cuid())
+  doctorId           String
+  patientId          String
+  pharmacyId         String
+  appointmentId      String?
+  doctor             Doctor             @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  patient            Patient            @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  pharmacy           Pharmacy           @relation(fields: [pharmacyId], references: [id], onDelete: Restrict)
+  appointment        Appointment?       @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  medicines          Json // Array of {name, dosage, frequency, duration, instructions}
+  status             PrescriptionStatus @default(PENDING)
+  prescriptionPdfUrl String? // PDF file path
+  notes              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId])
+  @@index([patientId])
+  @@index([pharmacyId])
+  @@index([appointmentId])
+  @@index([status])
+}
+
+// ==================== PATIENT VITALS ====================
+
+model VitalRecord {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Basic Vitals
+  bloodPressureSystolic  Int? // mmHg
+  bloodPressureDiastolic Int? // mmHg
+  temperature            Float? // Celsius
+  pulse                  Int? // beats per minute
+  spo2                   Int? // oxygen saturation %
+
+  // Extended Vitals
+  bloodSugar Float? // mg/dL
+  weight     Float? // kg
+  height     Float? // cm
+  bmi        Float? // calculated
+
+  // ICU Monitoring (for simulation)
+  heartRateData Json? // Time-series data for heart rate monitor
+
+  notes      String?
+  recordedAt DateTime @default(now())
+  recordedBy String? // User ID or name of who recorded
+
+  createdAt DateTime @default(now())
+
+  @@index([patientId])
+  @@index([recordedAt])
+}
+
+// ==================== PATIENT ADMISSIONS ====================
+
+model PatientAdmission {
+  id        String  @id @default(cuid())
+  patientId String
+  doctorId  String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  doctor    Doctor  @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+
+  admissionDate      DateTime        @default(now())
+  dischargeDate      DateTime?
+  status             AdmissionStatus @default(ADMITTED)
+  primaryDiagnosis   String
+  secondaryDiagnoses String[] // Array of secondary diagnoses
+  symptoms           String?
+  wardNumber         String?
+  bedNumber          String?
+  isIcuAdmission     Boolean         @default(false)
+  treatmentPlan      String?
+  dischargeSummary   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+  @@index([admissionDate])
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id      String           @id @default(cuid())
+  userId  String
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type    NotificationType
+  title   String
+  message String
+  link    String? // URL to related resource
+  isRead  Boolean          @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}

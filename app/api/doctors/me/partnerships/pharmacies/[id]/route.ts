@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { requireAuth } from '@/lib/session'
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const session = await requireAuth(['DOCTOR'])
 
     const doctor = await prisma.doctor.findUnique({
@@ -19,7 +20,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     await prisma.doctorPharmacyPartnership.deleteMany({
       where: {
         doctorId: doctor.id,
-        pharmacyId: params.id,
+        pharmacyId: id,
       },
     })
 

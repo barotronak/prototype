@@ -6,11 +6,12 @@ import { pharmacyProfileSchema } from '@/lib/validators'
 // GET /api/pharmacies/[id] - Get pharmacy by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const pharmacy = await prisma.pharmacy.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -40,9 +41,10 @@ export async function GET(
 // POST /api/pharmacies/[id] - Create pharmacy profile
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'PHARMACY'])
 
     const body = await request.json()
@@ -50,7 +52,7 @@ export async function POST(
 
     // Check if profile already exists
     const existing = await prisma.pharmacy.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (existing) {
@@ -63,7 +65,7 @@ export async function POST(
     // Create pharmacy profile
     const pharmacy = await prisma.pharmacy.create({
       data: {
-        userId: params.id,
+        userId: id,
         pharmacyName: validatedData.pharmacyName,
         address: validatedData.address,
         licenseNumber: validatedData.licenseNumber,
@@ -98,16 +100,17 @@ export async function POST(
 // PATCH /api/pharmacies/[id] - Update pharmacy profile
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'PHARMACY'])
 
     const body = await request.json()
     const validatedData = pharmacyProfileSchema.parse(body)
 
     const pharmacy = await prisma.pharmacy.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         pharmacyName: validatedData.pharmacyName,
         address: validatedData.address,

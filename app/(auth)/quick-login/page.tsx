@@ -75,7 +75,7 @@ export default function QuickLoginPage() {
           </div>
         )}
 
-        {['Admin', 'Doctor', 'Laboratory', 'Pharmacy', 'Patient'].map((role) => (
+        {['Admin','Patient', 'Doctor', 'Laboratory', 'Pharmacy'].map((role) => (
           <div key={role} className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-3">{role}s</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

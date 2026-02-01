@@ -8,7 +8,7 @@ export interface TextareaProps
   helperText?: string
 }
 
-export const Textarea = forwardRef<HTMLTextareaElement, TextareaProps>(
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, label, error, helperText, id, ...props }, ref) => {
     const textareaId = id || label?.toLowerCase().replace(/\s+/g, '-')
 

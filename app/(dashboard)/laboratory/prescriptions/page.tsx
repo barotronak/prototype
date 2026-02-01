@@ -186,12 +186,15 @@ export default function LaboratoryPrescriptions() {
         ) : (
           <div className="space-y-4">
             {filteredPrescriptions.map((prescription) => (
-              <Card
+              <div
                 key={prescription.id}
-                variant="glass"
-                className="hover:shadow-lg transition-shadow cursor-pointer"
+                className="cursor-pointer"
                 onClick={() => router.push(`/laboratory/prescriptions/${prescription.id}`)}
               >
+                <Card
+                  variant="glass"
+                  className="hover:shadow-lg transition-shadow"
+                >
                 <CardContent className="pt-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -292,6 +295,7 @@ export default function LaboratoryPrescriptions() {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             ))}
           </div>
         )}

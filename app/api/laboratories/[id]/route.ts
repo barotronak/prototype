@@ -6,11 +6,12 @@ import { laboratoryProfileSchema } from '@/lib/validators'
 // GET /api/laboratories/[id] - Get laboratory by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const laboratory = await prisma.laboratory.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -40,9 +41,10 @@ export async function GET(
 // POST /api/laboratories/[id] - Create laboratory profile
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'LABORATORY'])
 
     const body = await request.json()
@@ -50,7 +52,7 @@ export async function POST(
 
     // Check if profile already exists
     const existing = await prisma.laboratory.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (existing) {
@@ -63,11 +65,13 @@ export async function POST(
     // Create laboratory profile
     const laboratory = await prisma.laboratory.create({
       data: {
-        userId: params.id,
+        userId: id,
         labName: validatedData.labName,
         address: validatedData.address,
         licenseNumber: validatedData.licenseNumber,
-        servicesOffered: validatedData.servicesOffered,
+        servicesOffered: Array.isArray(validatedData.servicesOffered)
+          ? validatedData.servicesOffered
+          : [validatedData.servicesOffered],
         operatingHours: validatedData.operatingHours,
       },
       include: {
@@ -99,21 +103,24 @@ export async function POST(
 // PATCH /api/laboratories/[id] - Update laboratory profile
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'LABORATORY'])
 
     const body = await request.json()
     const validatedData = laboratoryProfileSchema.parse(body)
 
     const laboratory = await prisma.laboratory.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         labName: validatedData.labName,
         address: validatedData.address,
         licenseNumber: validatedData.licenseNumber,
-        servicesOffered: validatedData.servicesOffered,
+        servicesOffered: Array.isArray(validatedData.servicesOffered)
+          ? validatedData.servicesOffered
+          : [validatedData.servicesOffered],
         operatingHours: validatedData.operatingHours,
       },
       include: {

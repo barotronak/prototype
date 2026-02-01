@@ -10,14 +10,11 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const patientId = searchParams.get('patientId')
-    const admissionId = searchParams.get('admissionId')
 
     let where: any = {}
 
     if (patientId) {
       where.patientId = patientId
-    } else if (admissionId) {
-      where.admissionId = admissionId
     } else if (session.role === 'PATIENT') {
       const patient = await prisma.patient.findUnique({
         where: { userId: session.userId },
@@ -37,11 +34,6 @@ export async function GET(request: NextRequest) {
                 name: true,
               },
             },
-          },
-        },
-        admission: {
-          select: {
-            diagnosis: true,
           },
         },
       },
@@ -76,7 +68,6 @@ export async function POST(request: NextRequest) {
     const vital = await prisma.vitalRecord.create({
       data: {
         patientId: validatedData.patientId,
-        admissionId: validatedData.admissionId,
         bloodPressureSystolic: validatedData.bloodPressureSystolic,
         bloodPressureDiastolic: validatedData.bloodPressureDiastolic,
         temperature: validatedData.temperature,
@@ -87,6 +78,8 @@ export async function POST(request: NextRequest) {
         height: validatedData.height,
         bmi,
         heartRateData: validatedData.heartRateData,
+        notes: validatedData.notes,
+        recordedBy: validatedData.recordedBy,
       },
       include: {
         patient: {
@@ -94,7 +87,6 @@ export async function POST(request: NextRequest) {
             user: true,
           },
         },
-        admission: true,
       },
     })
 

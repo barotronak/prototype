@@ -6,13 +6,14 @@ import { requireAuth } from '@/lib/session'
 // GET /api/users/[id] - Get user by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await requireAuth(['ADMIN'])
 
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         admin: true,
         doctor: true,
@@ -52,9 +53,10 @@ export async function GET(
 // PATCH /api/users/[id] - Update user
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await requireAuth(['ADMIN'])
 
     const body = await request.json()
@@ -62,7 +64,7 @@ export async function PATCH(
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!existingUser) {
@@ -92,7 +94,7 @@ export async function PATCH(
 
     // Update user
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         admin: true,
@@ -130,13 +132,14 @@ export async function PATCH(
 // DELETE /api/users/[id] - Delete user
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN'])
 
     // Prevent admin from deleting themselves
-    if (session.userId === params.id) {
+    if (session.userId === id) {
       return NextResponse.json(
         { error: 'Cannot delete your own account' },
         { status: 400 }
@@ -145,7 +148,7 @@ export async function DELETE(
 
     // Check if user exists
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!user) {
@@ -154,7 +157,7 @@ export async function DELETE(
 
     // Delete user (cascade will handle related records)
     await prisma.user.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({

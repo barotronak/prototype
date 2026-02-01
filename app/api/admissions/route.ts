@@ -84,11 +84,11 @@ export async function POST(request: NextRequest) {
       data: {
         doctorId: validatedData.doctorId,
         patientId: validatedData.patientId,
-        diagnosis: validatedData.diagnosis,
+        primaryDiagnosis: validatedData.diagnosis,
         symptoms: validatedData.symptoms,
-        ward: validatedData.ward,
+        wardNumber: validatedData.ward,
         bedNumber: validatedData.bedNumber,
-        isIcu: validatedData.isIcu || false,
+        isIcuAdmission: validatedData.isIcu || false,
         treatmentPlan: validatedData.treatmentPlan,
       },
       include: {
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     // Send notification to patient
     await createNotification(
       admission.patient.userId,
-      'ADMISSION',
+      'GENERAL',
       'Hospital Admission',
       `You have been admitted by Dr. ${admission.doctor.user.name}`,
       `/patient/admissions/${admission.id}`

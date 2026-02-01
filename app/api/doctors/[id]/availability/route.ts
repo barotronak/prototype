@@ -6,11 +6,12 @@ import { doctorAvailabilitySchema } from '@/lib/validators'
 // GET /api/doctors/[id]/availability - Get doctor's availability slots
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const slots = await prisma.doctorAvailability.findMany({
-      where: { doctorId: params.id },
+      where: { doctorId: id },
       orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
     })
 
@@ -27,9 +28,10 @@ export async function GET(
 // POST /api/doctors/[id]/availability - Add availability slot
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'DOCTOR'])
 
     // If doctor, ensure they're managing their own availability
@@ -38,7 +40,7 @@ export async function POST(
         where: { userId: session.userId },
       })
 
-      if (!doctor || doctor.id !== params.id) {
+      if (!doctor || doctor.id !== id) {
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 403 }
@@ -51,12 +53,12 @@ export async function POST(
 
     const slot = await prisma.doctorAvailability.create({
       data: {
-        doctorId: params.id,
-        dayOfWeek: validatedData.dayOfWeek,
+        doctorId: id,
+        dayOfWeek: typeof validatedData.dayOfWeek === 'string' ? parseInt(validatedData.dayOfWeek) : validatedData.dayOfWeek,
         startTime: validatedData.startTime,
         endTime: validatedData.endTime,
-        slotDuration: validatedData.slotDuration,
-        isActive: validatedData.isActive,
+        slotDuration: typeof validatedData.slotDuration === 'string' ? parseInt(validatedData.slotDuration) : validatedData.slotDuration,
+        isActive: validatedData.isActive !== undefined ? validatedData.isActive : true,
       },
     })
 

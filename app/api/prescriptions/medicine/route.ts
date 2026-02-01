@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         patientId: validatedData.patientId,
         pharmacyId: validatedData.pharmacyId,
         medicines: validatedData.medicines,
-        instructions: validatedData.instructions,
+        notes: validatedData.instructions,
         prescriptionPdfUrl: validatedData.prescriptionPdfUrl,
       },
       include: {

@@ -6,13 +6,14 @@ import { createNotification } from '@/lib/notifications'
 // GET /api/admissions/[id] - Get specific admission
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await requireAuth()
 
     const admission = await prisma.patientAdmission.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         doctor: {
           include: {
@@ -23,9 +24,6 @@ export async function GET(
           include: {
             user: true,
           },
-        },
-        vitals: {
-          orderBy: { recordedAt: 'desc' },
         },
       },
     })
@@ -50,9 +48,10 @@ export async function GET(
 // PATCH /api/admissions/[id] - Update admission
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['DOCTOR'])
 
     const body = await request.json()
@@ -73,7 +72,7 @@ export async function PATCH(
     }
 
     const admission = await prisma.patientAdmission.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         doctor: {
@@ -93,7 +92,7 @@ export async function PATCH(
     if (status === 'DISCHARGED') {
       await createNotification(
         admission.patient.userId,
-        'ADMISSION',
+        'GENERAL',
         'Patient Discharged',
         `You have been discharged by Dr. ${admission.doctor.user.name}`,
         `/patient/admissions/${admission.id}`

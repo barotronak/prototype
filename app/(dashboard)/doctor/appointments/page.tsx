@@ -145,12 +145,16 @@ export default function DoctorAppointmentsPage() {
                       <UserIcon className="w-5 h-5 text-primary-700" />
                     </div>
                     <div>
-                      <Link
-                        href={`/doctor/patients/${appointment.patient.id}`}
-                        className="font-semibold text-gray-900 hover:text-primary-600 transition-colors"
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          window.location.href = `/doctor/patients/${appointment.patient.id}`
+                        }}
+                        className="font-semibold text-gray-900 hover:text-primary-600 transition-colors text-left"
                       >
                         {appointment.patient.user.name}
-                      </Link>
+                      </button>
                       <p className="text-sm text-gray-600">{appointment.patient.user.email}</p>
                     </div>
                   </div>

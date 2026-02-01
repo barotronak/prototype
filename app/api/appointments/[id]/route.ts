@@ -6,13 +6,14 @@ import { createNotification } from '@/lib/notifications'
 // GET /api/appointments/[id] - Get specific appointment
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await requireAuth()
 
     const appointment = await prisma.appointment.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         doctor: {
           include: {
@@ -66,16 +67,17 @@ export async function GET(
 // PATCH /api/appointments/[id] - Update appointment status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['DOCTOR', 'PATIENT', 'ADMIN'])
 
     const body = await request.json()
     const { status, notes } = body
 
     const appointment = await prisma.appointment.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status,
         notes: notes || undefined,
@@ -136,13 +138,14 @@ export async function PATCH(
 // DELETE /api/appointments/[id] - Delete appointment
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await requireAuth(['ADMIN'])
 
     await prisma.appointment.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({

@@ -5,11 +5,12 @@ import { requireAuth } from '@/lib/session'
 // GET /api/doctors/[id]/partnerships/pharmacies - Get doctor's pharmacy partnerships
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const partnerships = await prisma.doctorPharmacyPartnership.findMany({
-      where: { doctorId: params.id },
+      where: { doctorId: id },
       include: {
         pharmacy: {
           include: {
@@ -32,9 +33,10 @@ export async function GET(
 // POST /api/doctors/[id]/partnerships/pharmacies - Add pharmacy partnership
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'DOCTOR'])
 
     // If doctor, ensure they're managing their own partnerships
@@ -43,7 +45,7 @@ export async function POST(
         where: { userId: session.userId },
       })
 
-      if (!doctor || doctor.id !== params.id) {
+      if (!doctor || doctor.id !== id) {
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 403 }
@@ -65,7 +67,7 @@ export async function POST(
     const existing = await prisma.doctorPharmacyPartnership.findUnique({
       where: {
         doctorId_pharmacyId: {
-          doctorId: params.id,
+          doctorId: id,
           pharmacyId,
         },
       },
@@ -80,7 +82,7 @@ export async function POST(
 
     const partnership = await prisma.doctorPharmacyPartnership.create({
       data: {
-        doctorId: params.id,
+        doctorId: id,
         pharmacyId,
       },
       include: {

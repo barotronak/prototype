@@ -6,11 +6,12 @@ import { doctorProfileSchema } from '@/lib/validators'
 // GET /api/doctors/[id] - Get doctor by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const doctor = await prisma.doctor.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -60,14 +61,15 @@ export async function GET(
 // PATCH /api/doctors/[id] - Update doctor profile
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'DOCTOR'])
 
     // If doctor, ensure they're updating their own profile
     const doctor = await prisma.doctor.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!doctor) {
@@ -79,7 +81,7 @@ export async function PATCH(
         where: { userId: session.userId },
       })
 
-      if (!userDoctor || userDoctor.id !== params.id) {
+      if (!userDoctor || userDoctor.id !== id) {
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 403 }
@@ -92,7 +94,7 @@ export async function PATCH(
 
     // Update doctor profile
     const updatedDoctor = await prisma.doctor.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         specialization: validatedData.specialization,
         licenseNumber: validatedData.licenseNumber,
@@ -137,9 +139,10 @@ export async function PATCH(
 // POST /api/doctors/[id] - Create doctor profile (for users created without profile)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'DOCTOR'])
 
     const body = await request.json()
@@ -147,7 +150,7 @@ export async function POST(
 
     // Check if doctor profile already exists
     const existingDoctor = await prisma.doctor.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (existingDoctor) {
@@ -157,9 +160,9 @@ export async function POST(
       )
     }
 
-    // Get user by userId (params.id is userId here)
+    // Get user by userId (id is userId here)
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!user || user.role !== 'DOCTOR') {
@@ -172,7 +175,7 @@ export async function POST(
     // Create doctor profile
     const doctor = await prisma.doctor.create({
       data: {
-        userId: params.id,
+        userId: id,
         specialization: validatedData.specialization,
         licenseNumber: validatedData.licenseNumber,
         qualification: validatedData.qualification,

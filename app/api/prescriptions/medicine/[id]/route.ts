@@ -6,13 +6,14 @@ import { createNotification } from '@/lib/notifications'
 // GET /api/prescriptions/medicine/[id] - Get specific medicine prescription
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await requireAuth()
 
     const prescription = await prisma.medicinePrescription.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         doctor: {
           include: {
@@ -52,19 +53,19 @@ export async function GET(
 // PATCH /api/prescriptions/medicine/[id] - Update prescription status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['PHARMACY', 'DOCTOR'])
 
     const body = await request.json()
-    const { status, fulfillmentNotes } = body
+    const { status } = body
 
     const prescription = await prisma.medicinePrescription.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status,
-        fulfillmentNotes: fulfillmentNotes || undefined,
       },
       include: {
         patient: {

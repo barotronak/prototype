@@ -76,7 +76,7 @@ async function main() {
         labName: 'City Diagnostic Laboratory',
         address: '123 Main Street, City Center',
         licenseNumber: 'LAB-001',
-        servicesOffered: 'Blood Tests, X-Ray, CT Scan',
+        servicesOffered: ['Blood Tests', 'X-Ray', 'CT Scan'],
         operatingHours: 'Mon-Sat: 8 AM - 8 PM',
       },
     })
@@ -125,8 +125,7 @@ async function main() {
         address: '111 Patient Lane, Residential Area',
         emergencyContact: '+1234567802',
         bloodGroup: 'O+',
-        allergies: 'Penicillin',
-        medicalHistory: 'Hypertension',
+        allergies: ['Penicillin'],
       },
     })
 

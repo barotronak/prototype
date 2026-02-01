@@ -6,13 +6,14 @@ import { patientProfileSchema } from '@/lib/validators'
 // GET /api/patients/[id] - Get patient by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await requireAuth()
 
     const patient = await prisma.patient.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -76,9 +77,10 @@ export async function GET(
 // POST /api/patients/[id] - Create patient profile
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'PATIENT'])
 
     const body = await request.json()
@@ -86,7 +88,7 @@ export async function POST(
 
     // Check if profile already exists
     const existing = await prisma.patient.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (existing) {
@@ -99,14 +101,17 @@ export async function POST(
     // Create patient profile
     const patient = await prisma.patient.create({
       data: {
-        userId: params.id,
+        userId: id,
         dateOfBirth: new Date(validatedData.dateOfBirth),
         gender: validatedData.gender,
         address: validatedData.address,
         emergencyContact: validatedData.emergencyContact,
         bloodGroup: validatedData.bloodGroup,
-        allergies: validatedData.allergies,
-        medicalHistory: validatedData.medicalHistory,
+        allergies: validatedData.allergies
+          ? Array.isArray(validatedData.allergies)
+            ? validatedData.allergies
+            : [validatedData.allergies]
+          : [],
       },
       include: {
         user: true,
@@ -137,24 +142,28 @@ export async function POST(
 // PATCH /api/patients/[id] - Update patient profile
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await requireAuth(['ADMIN', 'PATIENT'])
 
     const body = await request.json()
     const validatedData = patientProfileSchema.parse(body)
 
     const patient = await prisma.patient.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         dateOfBirth: new Date(validatedData.dateOfBirth),
         gender: validatedData.gender,
         address: validatedData.address,
         emergencyContact: validatedData.emergencyContact,
         bloodGroup: validatedData.bloodGroup,
-        allergies: validatedData.allergies,
-        medicalHistory: validatedData.medicalHistory,
+        allergies: validatedData.allergies
+          ? Array.isArray(validatedData.allergies)
+            ? validatedData.allergies
+            : [validatedData.allergies]
+          : [],
       },
       include: {
         user: true,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate, formatTime, calculateAge } from '@/lib/utils'
@@ -35,18 +35,19 @@ interface PatientDetails {
   admissions: any[]
 }
 
-export default function PatientDetailsPage({ params }: { params: { id: string } }) {
+export default function PatientDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [patient, setPatient] = useState<PatientDetails | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchPatient()
-  }, [])
+  }, [id])
 
   const fetchPatient = async () => {
     try {
-      const res = await fetch(`/api/patients/${params.id}`)
+      const res = await fetch(`/api/patients/${id}`)
       if (res.ok) {
         const data = await res.json()
         setPatient(data.patient)

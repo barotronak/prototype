@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
@@ -16,7 +16,8 @@ interface Patient {
   }
 }
 
-export default function PrescribeLabTestPage({ params }: { params: { id: string } }) {
+export default function PrescribeLabTestPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [patient, setPatient] = useState<Patient | null>(null)
   const [labs, setLabs] = useState<Lab[]>([])
@@ -30,12 +31,12 @@ export default function PrescribeLabTestPage({ params }: { params: { id: string 
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [id])
 
   const fetchData = async () => {
     try {
       const [patientRes, labsRes] = await Promise.all([
-        fetch(`/api/patients/${params.id}`),
+        fetch(`/api/patients/${id}`),
         fetch('/api/doctors/me/partnerships/labs'),
       ])
 
@@ -69,7 +70,7 @@ export default function PrescribeLabTestPage({ params }: { params: { id: string 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          patientId: params.id,
+          patientId: id,
           labId: selectedLab,
           testName,
           testDetails,
@@ -81,7 +82,7 @@ export default function PrescribeLabTestPage({ params }: { params: { id: string 
       const data = await res.json()
 
       if (res.ok) {
-        router.push(`/doctor/patients/${params.id}`)
+        router.push(`/doctor/patients/${id}`)
       } else {
         setError(data.error || 'Failed to create prescription')
       }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
@@ -10,7 +10,8 @@ interface Patient {
   }
 }
 
-export default function AdmitPatientPage({ params }: { params: { id: string } }) {
+export default function AdmitPatientPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [patient, setPatient] = useState<Patient | null>(null)
   const [primaryDiagnosis, setPrimaryDiagnosis] = useState('')
@@ -24,11 +25,11 @@ export default function AdmitPatientPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     fetchPatient()
-  }, [])
+  }, [id])
 
   const fetchPatient = async () => {
     try {
-      const res = await fetch(`/api/patients/${params.id}`)
+      const res = await fetch(`/api/patients/${id}`)
       if (res.ok) {
         const data = await res.json()
         setPatient(data)
@@ -54,7 +55,7 @@ export default function AdmitPatientPage({ params }: { params: { id: string } })
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          patientId: params.id,
+          patientId: id,
           primaryDiagnosis,
           secondaryDiagnoses: [],
           symptoms,

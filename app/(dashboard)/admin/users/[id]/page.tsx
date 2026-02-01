@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -17,7 +17,8 @@ interface User {
   phone?: string | null
 }
 
-export default function EditUserPage({ params }: { params: { id: string } }) {
+export default function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [formData, setFormData] = useState({
@@ -32,11 +33,11 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     fetchUser()
-  }, [params.id])
+  }, [id])
 
   async function fetchUser() {
     try {
-      const response = await fetch(`/api/users/${params.id}`, {
+      const response = await fetch(`/api/users/${id}`, {
         credentials: 'include',
       })
 
@@ -77,7 +78,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
         updateData.password = formData.password
       }
 
-      const response = await fetch(`/api/users/${params.id}`, {
+      const response = await fetch(`/api/users/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData),

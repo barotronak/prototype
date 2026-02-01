@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
 import { ArrowLeftIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
@@ -29,18 +29,19 @@ interface LabReport {
   }
 }
 
-export default function LabReportDetailPage({ params }: { params: { id: string } }) {
+export default function LabReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [report, setReport] = useState<LabReport | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchReport()
-  }, [])
+  }, [id])
 
   const fetchReport = async () => {
     try {
-      const res = await fetch(`/api/lab-reports/${params.id}`)
+      const res = await fetch(`/api/lab-reports/${id}`)
       if (res.ok) {
         const data = await res.json()
         setReport(data)

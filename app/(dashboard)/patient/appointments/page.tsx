@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { formatDate, formatTime } from '@/lib/utils'
-import { CalendarIcon, ClockIcon, UserIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { CalendarIcon, ClockIcon, UserIcon } from '@heroicons/react/24/outline'
 
 interface Appointment {
   id: string
@@ -68,32 +67,16 @@ export default function PatientAppointmentsPage() {
 
   return (
     <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Appointments</h1>
-          <p className="text-sm text-gray-600 mt-1">View and manage your appointments</p>
-        </div>
-        <Link
-          href="/patient/appointments/book"
-          className="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors text-sm"
-        >
-          <PlusIcon className="w-4 h-4" />
-          Book Appointment
-        </Link>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">My Appointments</h1>
+        <p className="text-sm text-gray-600 mt-1">View and manage your appointments</p>
       </div>
 
       {appointments.length === 0 ? (
         <div className="bg-white/70 backdrop-blur-md rounded-xl p-12 border border-white/30 shadow-lg text-center">
           <CalendarIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No appointments yet</h3>
-          <p className="text-gray-600 text-sm mb-6">Book your first appointment with a doctor</p>
-          <Link
-            href="/patient/appointments/book"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg transition-colors text-sm"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Book Appointment
-          </Link>
+          <p className="text-gray-600 text-sm">You don't have any scheduled appointments</p>
         </div>
       ) : (
         <div className="space-y-3">

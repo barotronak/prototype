@@ -144,6 +144,7 @@ export default function BookAppointmentPage() {
             onChange={(e) => setSelectedDoctor(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
             required
+            disabled={loadingSlots}
           >
             <option value="">Choose a doctor...</option>
             {doctors.map((doctor) => (
@@ -154,8 +155,18 @@ export default function BookAppointmentPage() {
           </select>
         </div>
 
+        {/* Loading Indicator */}
+        {loadingSlots && selectedDoctor && (
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-blue-700 font-medium">Loading doctor availability...</p>
+            </div>
+          </div>
+        )}
+
         {/* Selected Doctor Info */}
-        {selectedDoctorInfo && (
+        {selectedDoctorInfo && !loadingSlots && (
           <div className="mb-4 p-3 bg-primary-50 border border-primary-200 rounded-lg">
             <h3 className="font-semibold text-sm text-gray-900">{selectedDoctorInfo.user.name}</h3>
             <p className="text-xs text-gray-600 mt-0.5">{selectedDoctorInfo.specialization}</p>
@@ -178,18 +189,17 @@ export default function BookAppointmentPage() {
             min={today}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
             required
+            disabled={!selectedDoctor || loadingSlots}
           />
         </div>
 
         {/* Available Slots */}
-        {selectedDoctor && selectedDate && (
+        {selectedDoctor && selectedDate && !loadingSlots && (
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Available Time Slots <span className="text-red-500">*</span>
             </label>
-            {loadingSlots ? (
-              <div className="text-sm text-gray-600 py-4 text-center">Loading available slots...</div>
-            ) : availableSlots.length === 0 ? (
+            {availableSlots.length === 0 ? (
               <div className="text-sm text-gray-600 py-4 text-center bg-gray-50 rounded-lg border border-gray-200">
                 No available slots for this date. Please try another date.
               </div>
